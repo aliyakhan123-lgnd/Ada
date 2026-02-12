@@ -56,7 +56,8 @@ module.exports = {
 
       return api.sendMessage(
         {
-          body: `Downloaded by: Shaan Babu`,
+          body: `𝐷𝑂𝑊𝑁𝐿𝑂𝐴𝐷 𝐵𝑌:  »»𝑶𝑾𝑵𝑬𝑹««★™  »»𝑺𝑯𝑨𝑨𝑵««
+          `,
           attachment: fs.createReadStream(filePath),
         },
         event.threadID,
