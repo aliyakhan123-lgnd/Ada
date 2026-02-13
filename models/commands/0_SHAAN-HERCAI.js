@@ -2,10 +2,10 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "hercai",
-  version: "4.5.0",
+  version: "5.0.0",
   hasPermission: 0,
   credits: "Shaan Khan", 
-  description: "Pollinations GET Method with Key Integration",
+  description: "Stable AI with Free API - No Key Needed",
   commandCategory: "AI",
   usePrefix: false,
   usages: "[Reply to bot]",
@@ -31,7 +31,7 @@ module.exports.handleEvent = async function ({ api, event }) {
   if (!userMemory[senderID]) userMemory[senderID] = [];
   if (!lastScript[senderID]) lastScript[senderID] = "Roman Urdu";
 
-  // Language Detection
+  // Script Logic
   if (userQuery.includes("pashto") || userQuery.includes("پښتو")) {
     lastScript[senderID] = "NATIVE PASHTO SCRIPT (پښتو)";
   } else if (userQuery.includes("urdu") && (userQuery.includes("script") || userQuery.includes("mein"))) {
@@ -44,19 +44,16 @@ module.exports.handleEvent = async function ({ api, event }) {
 
   const conversationHistory = userMemory[senderID].join("\n");
 
-  const systemPrompt = `You are an AI by Shaan Khan. Respond in ${lastScript[senderID]}. Emojis are mandatory. Context: ${conversationHistory}`;
+  const systemPrompt = `You are an AI by Shaan Khan. Strictly respond in ${lastScript[senderID]} and use emojis. Context: ${conversationHistory}`;
 
-  // Aapki Key yahan URL ke andar convert kar di hai
-  const myKey = "Sk_AYwwKm6GT1r5R0emOe21O9SNDHI7I9F9";
-  
-  // Naya GET URL structure aapki key ke sath
-  const apiURL = `https://text.pollinations.ai/${encodeURIComponent(body)}?system=${encodeURIComponent(systemPrompt)}&model=openai&seed=${Math.floor(Math.random() * 1000)}&key=${myKey}`;
+  // FREE STABLE API (No key required)
+  const apiURL = `https://sandipapi.onrender.com/gpt?prompt=${encodeURIComponent(body)}&system=${encodeURIComponent(systemPrompt)}`;
 
   try {
-    const response = await axios.get(apiURL);
-    let botReply = response.data;
+    const res = await axios.get(apiURL);
+    let botReply = res.data.answer; // Sandip API returns 'answer'
 
-    if (!botReply) throw new Error("Empty API");
+    if (!botReply) throw new Error("Empty Response");
 
     userMemory[senderID].push(`U: ${body}`, `B: ${botReply}`);
     if (userMemory[senderID].length > 6) userMemory[senderID].splice(0, 2);
@@ -65,9 +62,14 @@ module.exports.handleEvent = async function ({ api, event }) {
     return api.sendMessage(botReply, threadID, messageID);
 
   } catch (error) {
-    console.error("API Error:", error.message);
-    api.setMessageReaction("❌", messageID, (err) => {}, true);
-    return api.sendMessage("❌ Connection Error! Shaan Khan ki API key check karein ya server slow hai. ✨", threadID, messageID);
+    // Agar Sandip API fail ho toh backup free API
+    try {
+      const backupRes = await axios.get(`https://api.shinn07.repl.co/ai?query=${encodeURIComponent(body)}`);
+      return api.sendMessage(backupRes.data.answer + " ✨", threadID, messageID);
+    } catch (e) {
+      api.setMessageReaction("❌", messageID, (err) => {}, true);
+      return api.sendMessage("❌ Server down hai, thodi der baad koshish karein. ✨", threadID, messageID);
+    }
   }
 };
 
@@ -77,13 +79,13 @@ module.exports.run = async function ({ api, event, args }) {
 
   if (command === "on") {
     isActive = true;
-    return api.sendMessage("✅ AI On!", threadID, messageID);
+    return api.sendMessage("✅ AI Online!", threadID, messageID);
   } else if (command === "off") {
     isActive = false;
-    return api.sendMessage("⚠️ AI Off.", threadID, messageID);
+    return api.sendMessage("⚠️ AI Offline.", threadID, messageID);
   } else if (command === "clear") {
     userMemory = {};
     lastScript = {};
-    return api.sendMessage("🧹 Memory Reset!", threadID, messageID);
+    return api.sendMessage("🧹 Memory Cleared!", threadID, messageID);
   }
 };
